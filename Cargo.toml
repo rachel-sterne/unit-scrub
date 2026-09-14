@@ -1,0 +1,8 @@
+[package]
+name = "unit-scrub"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Normalizes messy byte size and duration text into a consistent form"
+
+[dependencies]
