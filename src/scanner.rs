@@ -94,4 +94,60 @@ impl<'a> Scanner<'a> {
     pub fn error_at(&self, pos: Position, kind: ErrorKind) -> ParseError {
         ParseError { line: pos.line, column: pos.column, kind }
     }
+
+    /// Reads a plain decimal number (digits, optionally a '.' and more
+    /// digits). Shared by every kind of entry that starts with a magnitude.
+    pub fn parse_number(&mut self) -> Result<f64, ParseError> {
+        let start = self.position();
+        let mut text = String::new();
+        let mut saw_digit = false;
+
+        while let Some(c) = self.peek() {
+            if c.is_ascii_digit() {
+                saw_digit = true;
+                text.push(c);
+                self.advance();
+            } else {
+                break;
+            }
+        }
+
+        if self.peek() == Some('.') {
+            text.push('.');
+            self.advance();
+            while let Some(c) = self.peek() {
+                if c.is_ascii_digit() {
+                    saw_digit = true;
+                    text.push(c);
+                    self.advance();
+                } else {
+                    break;
+                }
+            }
+        }
+
+        if !saw_digit {
+            let found = self.peek().map(|c| c.to_string()).unwrap_or_default();
+            return Err(self.error_at(start, ErrorKind::InvalidNumber(found)));
+        }
+
+        text.parse::<f64>()
+            .map_err(|_| self.error_at(start, ErrorKind::InvalidNumber(text.clone())))
+    }
+
+    /// Reads a run of ASCII letters, used for the unit that follows a
+    /// number. Returns an empty string if there's nothing to read, leaving
+    /// the caller to decide whether that's an error.
+    pub fn parse_alpha_text(&mut self) -> String {
+        let mut text = String::new();
+        while let Some(c) = self.peek() {
+            if c.is_ascii_alphabetic() {
+                text.push(c);
+                self.advance();
+            } else {
+                break;
+            }
+        }
+        text
+    }
 }

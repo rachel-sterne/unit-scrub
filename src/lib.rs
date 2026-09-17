@@ -2,10 +2,12 @@
 //! "200bytes") into a normalized form, reporting the exact line and column
 //! of anything it can't make sense of.
 
+mod duration;
 mod error;
 mod scanner;
 mod size;
 
+pub use duration::Duration;
 pub use error::{ErrorKind, ParseError};
 pub use size::ByteSize;
 

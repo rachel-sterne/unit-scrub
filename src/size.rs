@@ -118,11 +118,11 @@ impl fmt::Display for ByteSize {
 pub fn parse_size(scanner: &mut Scanner) -> Result<ByteSize, ParseError> {
     scanner.skip_inline_whitespace();
 
-    let number = parse_number(scanner)?;
+    let number = scanner.parse_number()?;
 
     scanner.skip_inline_whitespace();
     let unit_start = scanner.position();
-    let unit_text = parse_unit_text(scanner);
+    let unit_text = scanner.parse_alpha_text();
 
     if unit_text.is_empty() {
         return Err(scanner.error_at(unit_start, ErrorKind::MissingUnit));
@@ -141,57 +141,6 @@ pub fn parse_size(scanner: &mut Scanner) -> Result<ByteSize, ParseError> {
     }
 
     Ok(ByteSize::from_value_and_unit(number, unit))
-}
-
-fn parse_number(scanner: &mut Scanner) -> Result<f64, ParseError> {
-    let start = scanner.position();
-    let mut text = String::new();
-    let mut saw_digit = false;
-
-    while let Some(c) = scanner.peek() {
-        if c.is_ascii_digit() {
-            saw_digit = true;
-            text.push(c);
-            scanner.advance();
-        } else {
-            break;
-        }
-    }
-
-    if scanner.peek() == Some('.') {
-        text.push('.');
-        scanner.advance();
-        while let Some(c) = scanner.peek() {
-            if c.is_ascii_digit() {
-                saw_digit = true;
-                text.push(c);
-                scanner.advance();
-            } else {
-                break;
-            }
-        }
-    }
-
-    if !saw_digit {
-        let found = scanner.peek().map(|c| c.to_string()).unwrap_or_default();
-        return Err(scanner.error_at(start, ErrorKind::InvalidNumber(found)));
-    }
-
-    text.parse::<f64>()
-        .map_err(|_| scanner.error_at(start, ErrorKind::InvalidNumber(text.clone())))
-}
-
-fn parse_unit_text(scanner: &mut Scanner) -> String {
-    let mut text = String::new();
-    while let Some(c) = scanner.peek() {
-        if c.is_ascii_alphabetic() {
-            text.push(c);
-            scanner.advance();
-        } else {
-            break;
-        }
-    }
-    text
 }
 
 #[cfg(test)]

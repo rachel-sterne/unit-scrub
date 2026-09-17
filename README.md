@@ -11,9 +11,10 @@ returns `Err("bad input")` is barely more useful than a crash. This one
 tracks line and column as it scans, so a broken entry in line 40 of a
 2000-line file points straight at line 40.
 
-Only byte sizes are implemented so far. Durations (`90s`, `1h30m`, `2 days`)
-are the next piece — the same scanner and error type are built to carry
-both.
+Byte sizes are the CLI's job today. Durations (`90s`, `1h30m`, `2 days`)
+share the same scanner and error type and are parseable at the library
+level now (see below); wiring them into the command-line document format
+is next.
 
 ## Usage
 
@@ -70,6 +71,24 @@ for result in results {
     }
 }
 ```
+
+Durations parse the same way, as a library type, via `FromStr`:
+
+```rust
+use unit_scrub::Duration;
+
+let d: Duration = "1h30m".parse().unwrap();
+assert_eq!(d.seconds(), 5_400.0);
+println!("{}", d); // "1h 30m"
+```
+
+A duration is one or more `<number><unit>` components, run together or
+separated by spaces: `90s`, `1h30m`, `2 days`, `1.5h` all parse. Recognized
+units are `ms`/`millisecond(s)`, `s`/`sec(s)`/`second(s)`,
+`m`/`min(s)`/`minute(s)`, `h`/`hr(s)`/`hour(s)`, `d`/`day(s)`, and
+`w`/`wk(s)`/`week(s)`, matched case-insensitively. Formatting breaks the
+total back down into the largest units that divide it evenly, so `90s`
+prints back as `1m 30s`.
 
 ## Building
 
